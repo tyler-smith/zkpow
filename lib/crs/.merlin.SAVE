@@ -1,0 +1,17 @@
+EXCLUDE_QUERY_DIR
+B /home/opam/.opam/4.07.1/lib/digestif/ocaml
+B /home/opam/.opam/4.07.1/lib/eqaf
+B /home/opam/.opam/4.07.1/lib/ocaml
+B /home/opam/.opam/4.07.1/lib/ppx_deriving
+B /home/opam/.opam/4.07.1/lib/result
+B ../../../_build/default/src/lib/coda_digestif/.coda_digestif.objs/byte
+B ../../../_build/default/src/lib/crs/.crs.objs/byte
+S /home/opam/.opam/4.07.1/lib/digestif/ocaml
+S /home/opam/.opam/4.07.1/lib/eqaf
+S /home/opam/.opam/4.07.1/lib/ocaml
+S /home/opam/.opam/4.07.1/lib/ppx_deriving
+S /home/opam/.opam/4.07.1/lib/result
+S ../coda_digestif
+S .
+FLG -ppx '/home/opam/app/_build/default/.ppx/0edf93ee9e8f62fd9e062e5cdf229e90/ppx.exe --as-ppx --cookie '\''library-name="crs"'\'''
+FLG -w @a-4-29-40-41-42-44-45-48-58-59-60-40 -strict-sequence -strict-formats -short-paths -keep-locs -short-paths -cclib -ljemalloc -w @a-4-29-40-41-42-44-45-48-58-59-60

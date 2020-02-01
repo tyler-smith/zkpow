@@ -1,0 +1,7 @@
+(executables
+ (package zkpow)
+ (public_names zkpow)
+ (names main)
+ (modes native)
+ (preprocess (pps ppx_jane))
+ (libraries core snark_bits snarky zkpow))

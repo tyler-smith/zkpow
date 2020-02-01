@@ -1,0 +1,4 @@
+(library
+ (name curve_choice)
+ (public_name curve_choice)
+ (libraries snarkette snarky))

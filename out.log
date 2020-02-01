@@ -1,0 +1,94 @@
+INFO Not using Docker
+    ocamlopt lib/dummy_values/gen_values/gen_values.exe
+ld: warning: directory not found for option '-L/opt/local/lib'
+  gen_values lib/dummy_values/dummy_values.ml
+Swap is not beneficial, not performing
+* QAP number of variables: 2
+* QAP pre degree: 2
+* QAP degree: 4
+* QAP number of input variables: 1
+* G1 window: 2
+* G2 window: 1
+* G1 elements in PK: 11
+* Non-zero G1 elements in PK: 9
+* G2 elements in PK: 4
+* Non-zero G2 elements in PK: 2
+* PK size in bits: 3949
+* G1 elements in VK: 1
+* G2 elements in VK: 1
+* GT elements in VK: 1
+* VK size in bits: 1856
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 3 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 1 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 1 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* G1 elements in proof: 2
+* G2 elements in proof: 1
+* Proof size in bits: 1195
+Swap is not beneficial, not performing
+* QAP number of variables: 1
+* QAP pre degree: 2
+* QAP degree: 4
+* QAP number of input variables: 1
+* G1 window: 1
+* G2 window: 1
+* G1 elements in PK: 8
+* Non-zero G1 elements in PK: 7
+* G2 elements in PK: 3
+* Non-zero G2 elements in PK: 2
+* PK size in bits: 3351
+* G1 elements in VK: 1
+* G2 elements in VK: 1
+* GT elements in VK: 1
+* VK size in bits: 1856
+Swap is not beneficial, not performing
+* QAP number of variables: 2
+* QAP pre degree: 2
+* QAP degree: 4
+* QAP number of input variables: 1
+* G1 window: 2
+* G2 window: 1
+* G1 elements in PK: 11
+* Non-zero G1 elements in PK: 9
+* G2 elements in PK: 4
+* Non-zero G2 elements in PK: 2
+* PK size in bits: 4545
+* G1 elements in VK: 1
+* G2 elements in VK: 2
+* GT elements in VK: 1
+* VK size in bits: 2452
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 3 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 1 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* Elements of w skipped: 0 (0.00%)
+* Elements of w processed with special addition: 1 (100.00%)
+* Elements of w remaining: 0 (0.00%)
+* G1 elements in proof: 4
+* G2 elements in proof: 2
+* Proof size in bits: 2986
+Swap is not beneficial, not performing
+* QAP number of variables: 1
+* QAP pre degree: 2
+* QAP degree: 4
+* QAP number of input variables: 1
+* G1 window: 2
+* G2 window: 1
+* G1 elements in PK: 8
+* Non-zero G1 elements in PK: 7
+* G2 elements in PK: 3
+* Non-zero G2 elements in PK: 2
+* PK size in bits: 3947
+* G1 elements in VK: 1
+* G2 elements in VK: 2
+* GT elements in VK: 1
+* VK size in bits: 2452
+    ocamlopt bin/zkpow/main.exe
+ld: warning: directory not found for option '-L/opt/local/lib'
