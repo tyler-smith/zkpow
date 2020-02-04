@@ -1,6 +1,9 @@
 open Core_kernel
-open Snarky
 open Snark_params
+
+module Hash_prefix = struct
+  include Hash_prefix_states
+end
 
 module type S = sig
   open Tick
@@ -63,25 +66,36 @@ let step_input () = Tick.Data_spec.[Tick.Field.typ]
 
 let step_input_size = Tick.Data_spec.size (step_input ())
 
+module State = struct
+  let typ = Tick.Field.typ
+  module Hash = struct
+    let var_to_field f = f
+  end
+
+  module Checked = struct
+    let is_base_case f =
+      Tick0.Field.Checked.equal f (Tick0.Field.Var.constant Tick0.Field.zero)
+  end
+end
+
 module Make (Digest : sig
     module Tick :
       Tick.Snarkable.Bits.Lossy
       with type Packed.var = Tick.Field.Var.t
        and type Packed.value = Tick.Pedersen.Digest.t
-  end)
-    (System : S) =
+  end) =
 struct
   module Step_base = struct
-    open System
+    (* open System *)
 
     module Prover_state = struct
       type t =
         { wrap_vk: Tock.Verification_key.t
         ; prev_proof: Tock.Proof.t
-        ; prev_state: State.value
-        ; genesis_state_hash: State.Hash.t
-        ; expected_next_state: State.value option
-        ; update: Update.value }
+        ; prev_state: Tick.Field.t
+        ; prev_hash: Tick.Field.t
+        ; genesis_state_hash: Tick.Field.t
+        ; expected_next_state: Tick.Field.t}
       [@@deriving fields]
     end
 
@@ -98,10 +112,10 @@ struct
 
     let wrap_input_size = Tock.Data_spec.size [Wrap_input.typ]
 
-    let wrap_vk_triple_length =
+    (* let wrap_vk_triple_length =
       Verifier.Verification_key.summary_length_in_bits
         ~twist_extension_degree:3 ~input_size:wrap_input_size
-      |> bit_length_to_triple_length
+      |> Util.bit_length_to_triple_length *)
 
     let hash_vk vk =
       make_checked (fun () ->
@@ -146,7 +160,36 @@ struct
 
     let exists' typ ~f = exists typ ~compute:As_prover.(map get_state ~f)
 
-    let%snarkydef main (logger : Logger.t) (top_hash : Digest.Tick.Packed.var)
+    let%snarkydef main2 (_ : Logger.t) (next_state_hash : Digest.Tick.Packed.var) =
+      (* Calculate next state and compare with given next_state_hash *)
+      let%bind prev_state = exists' Field.typ ~f:Prover_state.prev_state in
+      let%bind prev_state_hash = exists' Field.typ ~f:Prover_state.prev_hash in
+      let%bind expected_next_state = exists' Field.typ ~f:Prover_state.expected_next_state in
+      let next_state = Tick0.Field.Var.add (Tick0.Field.Var.constant Tick0.Field.one) prev_state in
+      let%bind () =
+        Field.Checked.Assert.(equal expected_next_state next_state)
+      in
+      let%bind wrap_vk =
+        exists' (Verifier.Verification_key.typ ~input_size:wrap_input_size) ~f:(fun {Prover_state.wrap_vk; _} -> Verifier.vk_of_backend_vk wrap_vk )
+      in
+      let%bind wrap_vk_section = hash_vk wrap_vk in
+      let%bind next_top_hash =
+        with_label __LOC__
+          ((* We could be reusing the intermediate state of the hash on sh here instead of
+               hashing anew *)
+           compute_top_hash wrap_vk_section next_state_hash)
+      in
+      let%bind () =
+        Field.Checked.Assert.(equal next_state_hash next_top_hash)
+      in
+      let%bind prev_state_valid =
+        prev_state_valid wrap_vk_section wrap_vk prev_state_hash;
+      in
+      let%bind is_base_case = State.Checked.is_base_case next_state in
+      with_label __LOC__
+        (Boolean.Assert.any [is_base_case; prev_state_valid])
+
+    (* let%snarkydef main (logger : Logger.t) (top_hash : Digest.Tick.Packed.var)
         =
       let%bind prev_state = exists' State.typ ~f:Prover_state.prev_state
       and update = exists' Update.typ ~f:Prover_state.update in
@@ -235,7 +278,7 @@ struct
                   ; ("result", `Bool result) ]))
       in
       with_label __LOC__
-        (Boolean.Assert.any [is_base_case; inductive_case_passed])
+        (Boolean.Assert.any [is_base_case; inductive_case_passed]) *)
   end
 
   module Step (Tick_keypair : Tick_keypair_intf) = struct

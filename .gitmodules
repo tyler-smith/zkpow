@@ -1,3 +1,12 @@
 [submodule "lib/snarky"]
 	path = lib/snarky
 	url = https://github.com/o1-labs/snarky
+[submodule "external/ppx_optcomp"]
+	path = external/ppx_optcomp
+	url = https://github.com/CodaProtocol/ppx_optcomp
+[submodule "external/async_kernel"]
+	path = external/async_kernel
+	url = https://github.com/CodaProtocol/async_kernel
+[submodule "external/digestif"]
+	path = external/digestif
+	url = https://github.com/CodaProtocol/digestif.git

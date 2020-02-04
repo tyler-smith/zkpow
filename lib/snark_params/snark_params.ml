@@ -1,3 +1,5 @@
+[%%import
+"../../src/config.mlh"]
 
 open Core_kernel
 open Bitstring_lib
@@ -64,12 +66,12 @@ let%test_unit "group-map test" =
       let (), checked_output =
         M.run_and_check
           (fun () ->
-             let x, y =
-               Snarky_group_map.Checked.to_group
-                 (module M)
-                 ~params (M.Field.constant t)
-             in
-             fun () -> M.As_prover.(read_var x, read_var y) )
+            let x, y =
+              Snarky_group_map.Checked.to_group
+                (module M)
+                ~params (M.Field.constant t)
+            in
+            fun () -> M.As_prover.(read_var x, read_var y) )
           ()
         |> Or_error.ok_exn
       in
@@ -121,10 +123,10 @@ struct
 
     module Assert = struct
       let equal : var -> var -> (unit, _) Checked.t =
-        fun a b ->
-          Bitstring_checked.Assert.equal
-            (Bitstring.Lsb_first.to_list a)
-            (Bitstring.Lsb_first.to_list b)
+       fun a b ->
+        Bitstring_checked.Assert.equal
+          (Bitstring.Lsb_first.to_list a)
+          (Bitstring.Lsb_first.to_list b)
     end
   end
 end
@@ -147,15 +149,15 @@ module Tock = struct
     include Tock_backend.Inner_curve
 
     include Sexpable.Of_sexpable (struct
-        type t = Field.t * Field.t [@@deriving sexp]
-      end)
-        (struct
-          type nonrec t = t
+                type t = Field.t * Field.t [@@deriving sexp]
+              end)
+              (struct
+                type nonrec t = t
 
-          let to_sexpable = to_affine_exn
+                let to_sexpable = to_affine_exn
 
-          let of_sexpable = of_affine
-        end)
+                let of_sexpable = of_affine
+              end)
 
     include Make_inner_curve_aux (Tock0) (Tick0)
 
@@ -165,12 +167,12 @@ module Tock = struct
 
     module Checked = struct
       include Snarky_curves.Make_weierstrass_checked (Fq) (Scalar)
-          (struct
-            include Tock_backend.Inner_curve
+                (struct
+                  include Tock_backend.Inner_curve
 
-            let scale = scale_field
-          end)
-          (Coefficients)
+                  let scale = scale_field
+                end)
+                (Coefficients)
 
       let add_known_unsafe t x = add_unsafe t (constant x)
     end
@@ -220,12 +222,12 @@ module Tock = struct
 
         module Unchecked = struct
           include Snarkette.Elliptic_curve.Make (struct
-              include Inner_curve.Scalar
+                      include Inner_curve.Scalar
 
-              let num_bits _ = Field.size_in_bits
-            end)
-              (Fqe.Unchecked)
-              (Coefficients)
+                      let num_bits _ = Field.size_in_bits
+                    end)
+                    (Fqe.Unchecked)
+                    (Coefficients)
 
           let one =
             let x, y = Snarkette_tock.G2.(to_affine_exn one) in
@@ -233,16 +235,16 @@ module Tock = struct
         end
 
         include Snarky_curves.Make_weierstrass_checked
-            (Fqe)
-            (Inner_curve.Scalar)
-            (struct
-              include Unchecked
+                  (Fqe)
+                  (Inner_curve.Scalar)
+                  (struct
+                    include Unchecked
 
-              let double x = x + x
+                    let double x = x + x
 
-              let random () = scale one (Tick0.Field.random ())
-            end)
-            (Unchecked.Coefficients)
+                    let random () = scale one (Tick0.Field.random ())
+                  end)
+                  (Unchecked.Coefficients)
       end
 
       module Fqk = struct
@@ -275,11 +277,11 @@ module Tock = struct
 
       module G2_precomputation = struct
         include Snarky_pairing.G2_precomputation.Make (Fqe) (N)
-            (struct
-              include Params
+                  (struct
+                    include Params
 
-              let coeff_a = G2.Coefficients.a
-            end)
+                    let coeff_a = G2.Coefficients.a
+                  end)
 
         let create_constant =
           Fn.compose create_constant G2.Unchecked.to_affine_exn
@@ -357,15 +359,15 @@ module Tick = struct
     include Crypto_params.Tick_backend.Inner_curve
 
     include Sexpable.Of_sexpable (struct
-        type t = Field.t * Field.t [@@deriving sexp]
-      end)
-        (struct
-          type nonrec t = t
+                type t = Field.t * Field.t [@@deriving sexp]
+              end)
+              (struct
+                type nonrec t = t
 
-          let to_sexpable = to_affine_exn
+                let to_sexpable = to_affine_exn
 
-          let of_sexpable = of_affine
-        end)
+                let of_sexpable = of_affine
+              end)
 
     include Make_inner_curve_aux (Tick0) (Tock0)
 
@@ -375,12 +377,12 @@ module Tick = struct
 
     module Checked = struct
       include Snarky_curves.Make_weierstrass_checked (Fq) (Scalar)
-          (struct
-            include Crypto_params.Tick_backend.Inner_curve
+                (struct
+                  include Crypto_params.Tick_backend.Inner_curve
 
-            let scale = scale_field
-          end)
-          (Coefficients)
+                  let scale = scale_field
+                end)
+                (Coefficients)
 
       let add_known_unsafe t x = add_unsafe t (constant x)
     end
@@ -399,9 +401,9 @@ module Tick = struct
 
     module Checked = struct
       include Snarky.Pedersen.Make (Tick0) (Inner_curve)
-          (struct
-            let params = Crypto_params.Pedersen_params.affine
-          end)
+                (struct
+                  let params = Crypto_params.Pedersen_params.affine
+                end)
 
       let hash_triples ts ~(init : State.t) =
         hash ts ~init:(init.triples_consumed, `Value init.acc)
@@ -411,7 +413,7 @@ module Tick = struct
     end
 
     (* easier to put these hashing tests here, where Pedersen.Make has been applied, than
-       inside the Pedersen functor
+      inside the Pedersen functor
     *)
     module For_tests = struct
       open Fold_lib
@@ -433,23 +435,23 @@ module Tick = struct
       let gen_fold n =
         let gen_triple =
           Quickcheck.Generator.map (Int.gen_incl 0 7) ~f:(function
-              | 0 ->
+            | 0 ->
                 (false, false, false)
-              | 1 ->
+            | 1 ->
                 (false, false, true)
-              | 2 ->
+            | 2 ->
                 (false, true, false)
-              | 3 ->
+            | 3 ->
                 (false, true, true)
-              | 4 ->
+            | 4 ->
                 (true, false, false)
-              | 5 ->
+            | 5 ->
                 (true, false, true)
-              | 6 ->
+            | 6 ->
                 (true, true, false)
-              | 7 ->
+            | 7 ->
                 (true, true, true)
-              | _ ->
+            | _ ->
                 failwith "gen_triple: got unexpected integer" )
         in
         let gen_triples n =
@@ -463,7 +465,7 @@ module Tick = struct
       let run_updates fold =
         (* make sure chunk table deserialized before running test;
            actual deserialization happens just once
-        *)
+         *)
         ignore (Lazy.force chunk_table) ;
         let result = State.update_fold_chunked initial_state fold in
         let unchunked_result =
@@ -578,21 +580,21 @@ module Tick = struct
       module G2 = struct
         module Unchecked = struct
           include Snarkette.Elliptic_curve.Make (struct
-              include Inner_curve.Scalar
+                      include Inner_curve.Scalar
 
-              let num_bits _ = Field.size_in_bits
-            end)
-              (Fqe.Unchecked)
-              (struct
-                let a =
-                  Tick0.Field.(zero, zero, Inner_curve.Coefficients.a)
+                      let num_bits _ = Field.size_in_bits
+                    end)
+                    (Fqe.Unchecked)
+                    (struct
+                      let a =
+                        Tick0.Field.(zero, zero, Inner_curve.Coefficients.a)
 
-                let b =
-                  Fq.Unchecked.
-                    ( Inner_curve.Coefficients.b * Fqe.Params.non_residue
-                    , zero
-                    , zero )
-              end)
+                      let b =
+                        Fq.Unchecked.
+                          ( Inner_curve.Coefficients.b * Fqe.Params.non_residue
+                          , zero
+                          , zero )
+                    end)
 
           let one =
             let x, y = Snarkette_tick.G2.(to_affine_exn one) in
@@ -600,16 +602,16 @@ module Tick = struct
         end
 
         include Snarky_curves.Make_weierstrass_checked
-            (Fqe)
-            (Inner_curve.Scalar)
-            (struct
-              include Unchecked
+                  (Fqe)
+                  (Inner_curve.Scalar)
+                  (struct
+                    include Unchecked
 
-              let double x = x + x
+                    let double x = x + x
 
-              let random () = scale one (Tock.Field.random ())
-            end)
-            (Unchecked.Coefficients)
+                    let random () = scale one (Tock.Field.random ())
+                  end)
+                  (Unchecked.Coefficients)
       end
 
       module Fqk = struct
@@ -647,12 +649,12 @@ module Tick = struct
 
       module G2_precomputation = struct
         include Snarky_pairing.G2_precomputation.Make (Fqe) (N)
-            (struct
-              include Params
+                  (struct
+                    include Params
 
-              let coeff_a =
-                Tick0.Field.(zero, zero, G1.Unchecked.Coefficients.a)
-            end)
+                    let coeff_a =
+                      Tick0.Field.(zero, zero, G1.Unchecked.Coefficients.a)
+                  end)
 
         let create_constant =
           Fn.compose create_constant G2.Unchecked.to_affine_exn
@@ -674,39 +676,39 @@ module Tick = struct
 
   module Verifier = struct
     include Snarky_verifier.Bowe_gabizon.Make (struct
-        include Pairing
+      include Pairing
 
-        module H = Bowe_gabizon_hash.Make (struct
-            open Run
-            module Field = Field
-            module Fqe = Pairing.Fqe
+      module H = Bowe_gabizon_hash.Make (struct
+        open Run
+        module Field = Field
+        module Fqe = Pairing.Fqe
 
-            module G1 = struct
-              type t = Field.t * Field.t
+        module G1 = struct
+          type t = Field.t * Field.t
 
-              let to_affine_exn = Fn.id
+          let to_affine_exn = Fn.id
 
-              let of_affine = Fn.id
-            end
+          let of_affine = Fn.id
+        end
 
-            module G2 = struct
-              type t = Fqe.t * Fqe.t
+        module G2 = struct
+          type t = Fqe.t * Fqe.t
 
-              let to_affine_exn = Fn.id
-            end
+          let to_affine_exn = Fn.id
+        end
 
-            let hash xs =
-              Random_oracle.Checked.hash ~init:(Lazy.force Tock_backend.bg_salt) xs
+        let hash xs =
+          Random_oracle.Checked.hash ~init:(Lazy.force Tock_backend.bg_salt) xs
 
-            let group_map =
-              Snarky_group_map.Checked.to_group
-                (module Run)
-                ~params:Tock_backend.bg_params
-          end)
-
-        let hash ?message ~a ~b ~c ~delta_prime =
-          make_checked (fun () -> H.hash ?message ~a ~b ~c ~delta_prime)
+        let group_map =
+          Snarky_group_map.Checked.to_group
+            (module Run)
+            ~params:Tock_backend.bg_params
       end)
+
+      let hash ?message ~a ~b ~c ~delta_prime =
+        make_checked (fun () -> H.hash ?message ~a ~b ~c ~delta_prime)
+    end)
 
     let conv_fqe v =
       let v = Tock_backend.Full.Fqe.to_vector v in
@@ -772,8 +774,8 @@ let embed (x : Tick.Field.t) : Tock.Field.t =
 (** enable/disable use of chunk table in Pedersen hashing *)
 let set_chunked_hashing b = Tick.Pedersen.State.set_chunked_fold b
 
-(*[%%inject
-  "ledger_depth", ledger_depth]*)
+[%%inject
+"ledger_depth", ledger_depth]
 
 let scan_state_transaction_capacity_log_2 =
   Scan_state_constants.transaction_capacity_log_2
@@ -785,7 +787,7 @@ let pending_coinbase_depth =
   Int.ceil_log2
     ( (scan_state_transaction_capacity_log_2 + 1)
       * (scan_state_work_delay + 1)
-      + 1 )
+    + 1 )
 
 (* Let n = Tick.Field.size_in_bits.
    Let k = n - 3.

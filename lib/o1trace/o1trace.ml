@@ -1,8 +1,8 @@
 [%%import
-  "../../config.mlh"]
+"../../src/config.mlh"]
 
 [%%if
-  tracing]
+tracing]
 
 open Core
 open Async
@@ -65,10 +65,10 @@ let trace (name : string) (f : unit -> 'a) =
   trace_new_thread name new_ctx.tid ;
   match Scheduler.within_context new_ctx f with
   | Error () ->
-    failwithf "traced task `%s` failed, exception reported to parent monitor"
-      name ()
+      failwithf "traced task `%s` failed, exception reported to parent monitor"
+        name ()
   | Ok x ->
-    x
+      x
 
 let trace_task (name : string) (f : unit -> unit Deferred.t) =
   don't_wait_for (trace name f)
@@ -85,12 +85,12 @@ let trace_recurring_task (name : string) (f : unit -> unit Deferred.t) =
 let measure (name : string) (f : unit -> 'a) : 'a =
   match !current_wr with
   | Some wr ->
-    emit_event wr {(new_event Measure_start) with name} ;
-    let res = f () in
-    emit_event wr (new_event Measure_end) ;
-    res
+      emit_event wr {(new_event Measure_start) with name} ;
+      let res = f () in
+      emit_event wr (new_event Measure_end) ;
+      res
   | None ->
-    f ()
+      f ()
 
 let forget_tid (f : unit -> 'a) =
   let new_ctx =
