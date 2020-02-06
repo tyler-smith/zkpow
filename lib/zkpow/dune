@@ -7,4 +7,4 @@
  (inline_tests)
  (libraries bignum_bigint bitstring_lib bowe_gabizon_hash core curve_choice digestif group_map
  hash_prefix_states hash_prefixes logger random_oracle sexp_diff_kernel snark_bits snark_params
- snarky snarky_curves snarky_field_extensions snarky_universe))
+ snarky snarky_curves snarky_field_extensions snarky_universe storage))

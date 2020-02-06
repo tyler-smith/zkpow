@@ -1,56 +1,246 @@
 (* open Coda_base *)
+open Core_kernel
+open Snark_params
+open Snark_bits
+open Tick
+open Bitstring_lib
 
+module Digest = Tick.Pedersen.Digest
+module Storage = Storage.List.Make (Storage.Disk)
 
-  (* include Transition_system.Make (struct
-              module Tick = struct
-                module Packed = struct
-                  type value = Tick.Pedersen.Digest.t
+(* module type Update_intf = sig
+  module Checked : sig
+    val update :
+         logger:Logger.t
+      -> State_hash.var * State_body_hash.var
+      -> ( State_hash.var * [`Success of Boolean.var]
+         , _ )
+         Checked.t
+    (* val update :
+        logger:Logger.t
+      -> State_hash.var * State_body_hash.var * Protocol_state.var
+      -> Snark_transition.var
+      -> ( State_hash.var * Protocol_state.var * [`Success of Boolean.var]
+        , _ )
+        Checked.t *)
+  end
+end
 
-                  type var = Tick.Pedersen.Checked.Digest.var
+module Make_update = struct
+  module Chcked = struct
+    let%snarkydef update (_ : Logger.t) ((state_hash, state_body) : State_hash.var * State_body_hash.var) ( State_hash.var * Protocol_state.var * [`Success of Boolean.var]
+    , _ )
+    Tick.Checked.t =
+      ()
+  end
+end *)
 
-                  let typ = Tick.Pedersen.Checked.Digest.typ
-                end
+module Keys = struct
+  module Per_curve_location = struct
+    module T = struct
+      type t = {step: Storage.location; wrap: Storage.location}
+      [@@deriving sexp]
+    end
 
-                module Unpacked = struct
-                  type value = Tick.Pedersen.Checked.Digest.Unpacked.t
+    include T
+    include Sexpable.To_stringable (T)
+  end
 
-                  type var = Tick.Pedersen.Checked.Digest.Unpacked.var
+  module Proving = struct
+    module Location = Per_curve_location
 
-                  let typ : (var, value) Tick.Typ.t =
-                    Tick.Pedersen.Checked.Digest.Unpacked.typ
+    let checksum ~step ~wrap =
+      Md5.digest_string
+        ("Blockchain_transition_proving" ^ Md5.to_hex step ^ Md5.to_hex wrap)
 
-                  let var_to_bits (x : var) =
-                    Bitstring_lib.Bitstring.Lsb_first.of_list
-                      (x :> Tick.Boolean.var list)
+    type t = {step: Tick.Proving_key.t; wrap: Tock.Proving_key.t}
 
-                  let var_of_bits = Fn.id
+    let dummy =
+      { step= Dummy_values.Tick.Groth16.proving_key
+      ; wrap= Dummy_values.Tock.Bowe_gabizon18.proving_key }
 
-                  let var_to_triples xs =
-                    let open Fold in
-                    to_list
-                      (group3 ~default:Tick.Boolean.false_
-                         (of_list (var_to_bits xs :> Tick.Boolean.var list)))
+    let load ({step; wrap} : Location.t) =
+      let open Storage in
+      let logger = Logger.create () in
+      let tick_controller =
+        Controller.create ~logger (module Tick.Proving_key)
+      in
+      let tock_controller =
+        Controller.create ~logger (module Tock.Proving_key)
+      in
+      let open Async in
+      let load c p =
+        match%map load_with_checksum c p with
+        | Ok x ->
+            x
+        | Error e ->
+            failwithf
+              !"Blockchain_snark: load failed on %{sexp:Storage.location}: \
+                %{sexp:[`Checksum_no_match|`No_exist|`IO_error of Error.t]}"
+              p e ()
+      in
+      let%map step = load tick_controller step
+      and wrap = load tock_controller wrap in
+      let t = {step= step.data; wrap= wrap.data} in
+      (t, checksum ~step:step.checksum ~wrap:wrap.checksum)
+  end
 
-                  let var_of_value =
-                    Tick.Pedersen.Checked.Digest.Unpacked.constant
-                end
+  module Verification = struct
+    module Location = Per_curve_location
 
-                let project_value =
-                  Fn.compose Tick.Field.project Bitstring.Lsb_first.to_list
+    let checksum ~step ~wrap =
+      Md5.digest_string
+        ( "Blockchain_transition_verification" ^ Md5.to_hex step
+        ^ Md5.to_hex wrap )
 
-                let project_var = Tick.Pedersen.Checked.Digest.Unpacked.project
+    type t = {step: Tick.Verification_key.t; wrap: Tock.Verification_key.t}
 
-                let unpack_value =
-                  Fn.compose Bitstring.Lsb_first.of_list Tick.Field.unpack
+    let dummy =
+      { step=
+          Tick_backend.Verification_key.get_dummy
+            ~input_size:Transition_system.step_input_size
+      ; wrap=
+          Tock_backend.Bowe_gabizon.Verification_key.get_dummy
+            ~input_size:Wrap_input.size }
 
-                let choose_preimage_var =
-                  Tick.Pedersen.Checked.Digest.choose_preimage
-              end
+    let load ({step; wrap} : Location.t) =
+      let open Storage in
+      let logger = Logger.create () in
+      let tick_controller =
+        Controller.create ~logger (module Tick.Verification_key)
+      in
+      let tock_controller =
+        Controller.create ~logger (module Tock.Verification_key)
+      in
+      let open Async in
+      let load c p =
+        match%map load_with_checksum c p with
+        | Ok x ->
+            x
+        | Error _e ->
+            failwithf
+              !"Blockchain_snark: load failed on %{sexp:Storage.location}"
+              p ()
+      in
+      let%map step = load tick_controller step
+      and wrap = load tock_controller wrap in
+      let t = {step= step.data; wrap= wrap.data} in
+      (t, checksum ~step:step.checksum ~wrap:wrap.checksum)
+  end
 
-              module Tock = Bits.Snarkable.Field (Tock)
-            end)
+  type t = {proving: Proving.t; verification: Verification.t}
 
-  module Keys = struct
+  let dummy = {proving= Proving.dummy; verification= Verification.dummy}
+
+  module Checksum = struct
+    type t = {proving: Md5.t; verification: Md5.t}
+  end
+
+  module Location = struct
+    module T = struct
+      type t =
+        {proving: Proving.Location.t; verification: Verification.Location.t}
+      [@@deriving sexp]
+    end
+
+    include T
+    include Sexpable.To_stringable (T)
+  end
+
+  (* let load ({proving; verification} : Location.t) =
+    let%map proving, proving_checksum = Proving.load proving
+    and verification, verification_checksum = Verification.load verification in
+    ( {proving; verification}
+    , {Checksum.proving= proving_checksum; verification= verification_checksum}
+    ) *)
+end
+
+module Make = struct
+  open Fold_lib
+
+  (* module System = struct
+    module U = Blockchain_snark_state.Make_update (T)
+    module Update = Snark_transition
+
+    module State = struct
+      include Protocol_state
+
+      include (
+        Blockchain_snark_state :
+          module type of Blockchain_snark_state
+          with module Checked := Blockchain_snark_state.Checked )
+
+      include (U : module type of U with module Checked := U.Checked)
+
+      module Hash = struct
+        include Coda_base.State_hash
+
+        let var_to_field = var_to_hash_packed
+      end
+
+      module Body_hash = struct
+        include Coda_base.State_body_hash
+
+        let var_to_field = var_to_hash_packed
+      end
+
+      module Checked = struct
+        include Blockchain_snark_state.Checked
+        include U.Checked
+      end
+    end
+  end *)
+
+  include Transition_system.Make (struct
+    module Tick = struct
+      module Packed = struct
+        type value = Tick.Pedersen.Digest.t
+
+        type var = Tick.Pedersen.Checked.Digest.var
+
+        let typ = Tick.Pedersen.Checked.Digest.typ
+      end
+
+      module Unpacked = struct
+        type value = Tick.Pedersen.Checked.Digest.Unpacked.t
+
+        type var = Tick.Pedersen.Checked.Digest.Unpacked.var
+
+        let typ : (var, value) Tick.Typ.t =
+          Tick.Pedersen.Checked.Digest.Unpacked.typ
+
+        let var_to_bits (x : var) =
+          Bitstring_lib.Bitstring.Lsb_first.of_list
+            (x :> Tick.Boolean.var list)
+
+        let var_of_bits = Fn.id
+
+        let var_to_triples xs =
+          let open Fold in
+          to_list
+            (group3 ~default:Tick.Boolean.false_
+                (of_list (var_to_bits xs :> Tick.Boolean.var list)))
+
+        let var_of_value =
+          Tick.Pedersen.Checked.Digest.Unpacked.constant
+      end
+
+      let project_value =
+        Fn.compose Tick.Field.project Bitstring.Lsb_first.to_list
+
+      let project_var = Tick.Pedersen.Checked.Digest.Unpacked.project
+
+      let unpack_value =
+        Fn.compose Bitstring.Lsb_first.of_list Tick.Field.unpack
+
+      let choose_preimage_var =
+        Tick.Pedersen.Checked.Digest.choose_preimage
+    end
+
+    module Tock = Bits.Snarkable.Field (Tock)
+  end)
+
+  (* module Keys = struct
     include Keys
 
     let step_cached =
@@ -76,7 +266,7 @@
         ~create_env:Tick.Keypair.generate
         ~input:
           (Tick.constraint_system ~exposing:(Step_base.input ())
-             (Step_base.main (Logger.null ())))
+              (Step_base.main (Logger.null ())))
 
     let cached () =
       let open Cached.Deferred_with_track_generated.Let_syntax in
@@ -123,3 +313,4 @@
       let t : Verification.t = {step= step_vk.value; wrap= wrap_vk.value} in
       (location, t, checksum)
   end *)
+end

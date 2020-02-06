@@ -1,7 +1,7 @@
 (* data_hash.ml *)
 
 [%%import
-"../../src/config.mlh"]
+"/src/config.mlh"]
 
 open Core_kernel
 open Bitstring_lib
@@ -78,7 +78,7 @@ struct
       >>| fun x -> (x :> Boolean.var list)
     else Field.Checked.unpack ~length:length_in_bits
 
-  let var_to_bits t =
+  let%snarkydef var_to_bits t =
     match t.bits with
     | Some bits ->
         return (bits :> Boolean.var list)

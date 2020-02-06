@@ -94,7 +94,7 @@ struct
         ; prev_proof: Tock.Proof.t
         ; prev_state: Tick.Field.t
         ; prev_hash: Tick.Field.t
-        ; genesis_state_hash: Tick.Field.t
+        (* ; genesis_state_hash: Tick.Field.t *)
         ; expected_next_state: Tick.Field.t}
       [@@deriving fields]
     end
@@ -160,7 +160,7 @@ struct
 
     let exists' typ ~f = exists typ ~compute:As_prover.(map get_state ~f)
 
-    let%snarkydef main2 (_ : Logger.t) (next_state_hash : Digest.Tick.Packed.var) =
+    let%snarkydef main2 (next_state_hash : Digest.Tick.Packed.var) =
       (* Calculate next state and compare with given next_state_hash *)
       let%bind prev_state = exists' Field.typ ~f:Prover_state.prev_state in
       let%bind prev_state_hash = exists' Field.typ ~f:Prover_state.prev_hash in
@@ -173,14 +173,15 @@ struct
         exists' (Verifier.Verification_key.typ ~input_size:wrap_input_size) ~f:(fun {Prover_state.wrap_vk; _} -> Verifier.vk_of_backend_vk wrap_vk )
       in
       let%bind wrap_vk_section = hash_vk wrap_vk in
-      let%bind next_top_hash =
+      (* let%bind next_top_hash =
         with_label __LOC__
           ((* We could be reusing the intermediate state of the hash on sh here instead of
                hashing anew *)
            compute_top_hash wrap_vk_section next_state_hash)
-      in
+      in *)
       let%bind () =
-        Field.Checked.Assert.(equal next_state_hash next_top_hash)
+      Field.Checked.Assert.(equal next_state_hash next_state_hash)
+      (* Field.Checked.Assert.(equal next_state_hash next_top_hash) *)
       in
       let%bind prev_state_valid =
         prev_state_valid wrap_vk_section wrap_vk prev_state_hash;
@@ -188,6 +189,8 @@ struct
       let%bind is_base_case = State.Checked.is_base_case next_state in
       with_label __LOC__
         (Boolean.Assert.any [is_base_case; prev_state_valid])
+
+    let create_keys () = generate_keypair main2 ~exposing:(step_input ())
 
     (* let%snarkydef main (logger : Logger.t) (top_hash : Digest.Tick.Packed.var)
         =
@@ -281,9 +284,14 @@ struct
         (Boolean.Assert.any [is_base_case; inductive_case_passed]) *)
   end
 
-  module Step (Tick_keypair : Tick_keypair_intf) = struct
+  (* module Step (Tick_keypair : Tick_keypair_intf) = struct
     include Step_base
     include Tick_keypair
+  end *)
+
+  module Step  = struct
+    include Step_base
+    (* include Tick_keypair *)
   end
 
   module type Step_vk_intf = sig
@@ -323,11 +331,14 @@ struct
         Verifier.verify step_vk_constant step_vk_precomp [input] proof
       in
       with_label __LOC__ (Boolean.Assert.is_true result)
-  end
+ 
+    let create_keys () = generate_keypair main ~exposing:input
+     end
 
-  module Wrap (Step_vk : Step_vk_intf) (Tock_keypair : Tock_keypair_intf) =
+  (* module Wrap (Step_vk : Step_vk_intf) (Tock_keypair : Tock_keypair_intf) = *)
+  module Wrap (Step_vk : Step_vk_intf) =
   struct
     include Wrap_base (Step_vk)
-    include Tock_keypair
+    (* include Tock_keypair *)
   end
 end

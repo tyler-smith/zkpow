@@ -54,4 +54,9 @@ module type S = sig
   end
 end
 
+
+(* let bc_pk = Tick.generate_keypair ~exposing(tick) *)
+
+(* let bc_vk = lazy (Snark_keys.blockchain_verification ()) *)
+
 (* let create () :(module S) = *)
