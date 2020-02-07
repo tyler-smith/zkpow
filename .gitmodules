@@ -1,6 +1,6 @@
 [submodule "lib/snarky"]
 	path = lib/snarky
-	url = https://github.com/o1-labs/snarky
+	url = https://github.com/tyler-smith/snarky
 [submodule "external/ppx_optcomp"]
 	path = external/ppx_optcomp
 	url = https://github.com/CodaProtocol/ppx_optcomp
