@@ -23,6 +23,8 @@ doc: build ## Build documentation
 clean: ## Clean dune artifacts
 	@dune clean
 
+install_deps: ## Install dependencies from OPAM
+  @opam switch import opam.export --switch zkpow
 
 MYUID = $(shell id -u)
 DOCKERNAME = zkpowbuilder-$(MYUID)
