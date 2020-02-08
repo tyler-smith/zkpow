@@ -30,10 +30,10 @@ install_deps: ## Install dependencies from OPAM
 ##
 
 build-container-stage-1: ## Create stage1 of Docker build container
-	@docker build -t $(DOCKER_HUB_PROFILE)/zkpow-build-stage1 -f dockerfiles/Dockerfile.build-stage1 .
+	@docker build -t $(DOCKER_HUB_PROFILE)/zkpow-builder-stage1 -f dockerfiles/Dockerfile.build-stage1 .
 
 build-container: ## Create Docker build container
-	@docker build -t $(DOCKER_HUB_PROFILE)/zkpow-build -f dockerfiles/Dockerfile.build .
+	@docker build -t $(DOCKER_HUB_PROFILE)/zkpow-builder -f dockerfiles/Dockerfile.build .
 
 ##
 ## Help and Phonys
