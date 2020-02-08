@@ -47,15 +47,15 @@ chmod -R u+rw ~/.opam
 
 opam install -y jbuilder
 
-# Our pins
-# opam pin add src/external/async_kernel
-opam pin add src/external/digestif
-opam pin add src/external/ppx_optcomp
-opam pin add src/external/snarky
-eval $(opam config env)
-
 # All our ocaml packages
 opam switch import src/opam.export
+eval $(opam config env)
+
+# Our pins
+# opam pin add src/external/async_kernel
+opam pin add src/external/ppx_optcomp
+opam pin add src/external/digestif
+opam pin add src/external/snarky
 eval $(opam config env)
 
 # show switch list at end
