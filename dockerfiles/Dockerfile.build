@@ -1,0 +1,11 @@
+FROM tylersmith/zkpow-builder-stage1
+
+ADD . /home/opam/app
+WORKDIR /home/opam/app
+
+RUN INSIDE_DOCKER=true make install_deps
+
+VOLUME /build
+VOLUME /home/opam/app
+
+ENTRYPOINT [ "make" ]
