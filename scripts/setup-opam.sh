@@ -45,7 +45,7 @@ fi
 # workaround a permissions problem in rpc_parallel .git
 chmod -R u+rw ~/.opam
 
-opam install -y jbuilder
+opam install -y dune jbuilder
 
 # All our ocaml packages
 opam switch import src/opam.export
