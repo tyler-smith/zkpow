@@ -9,7 +9,7 @@ env:
 
 script:
   - git submodule update --init --recursive
-  - apt install -y libprocps-dev
+  - sudo apt install -y libprocps-dev
   - bash -ex .travis-ocaml.sh
   - opam install dune
   - make install_deps
