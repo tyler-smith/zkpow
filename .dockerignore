@@ -1,0 +1,6 @@
+*
+!.git
+!.gitmodules
+!src
+!scripts
+!Makefile

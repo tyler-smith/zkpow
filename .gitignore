@@ -30,3 +30,6 @@ _opam/
 notes
 *DS_Store
 
+# Editor configs
+.vscode
+.idea

@@ -1,0 +1,22 @@
+FROM ocaml/opam2:debian-9-ocaml-4.08
+
+WORKDIR /home/opam/app
+
+ADD . /home/opam/app
+
+VOLUME /build
+VOLUME /home/opam/app
+
+RUN sudo apt-get update && sudo apt-get install --yes \
+    build-essential=12.3 \
+    cmake=3.7.2-1 \
+    git=1:2.11.0-3+deb9u4 \
+    libgmp-dev=2:6.1.2+dfsg-1 \
+    libgmp3-dev=2:6.1.2+dfsg-1 \
+    pkg-config=0.29-4+b1 \
+    m4
+
+RUN make install_deps
+RUN make build
+
+ENTRYPOINT [ "make" ]
