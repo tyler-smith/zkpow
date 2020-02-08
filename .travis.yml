@@ -1,6 +1,6 @@
 language: c
 sudo: required
-install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-opam.sh
+install: wget https://raw.githubusercontent.com/ocaml/ocaml-ci-scripts/master/.travis-ocaml.sh
 os:
   - linux
   - osx
@@ -10,6 +10,6 @@ env:
 
 script:
   - git submodule update --init --recursive
-  - bash -ex .travis-opam.sh
+  - bash -ex .travis-ocaml.sh
   - make install_deps
   - make run
