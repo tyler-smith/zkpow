@@ -1,0 +1,7 @@
+os:
+  - linux
+  - osx
+
+script:
+  - make install_deps
+  - make run
