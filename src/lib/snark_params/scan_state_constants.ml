@@ -1,5 +1,5 @@
 [%%import
-"../../src/config.mlh"]
+"../../config.mlh"]
 
 (* in the config files, we either have:
 

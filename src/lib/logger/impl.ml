@@ -35,7 +35,7 @@ module Metadata = struct
   module Stable = struct
     module V1 = struct
       module T = struct
-        type t = Yojson.Safe.t String.Map.t [@@deriving version {asserted}]
+        type t = Yojson.Safe.json String.Map.t [@@deriving version {asserted}]
 
         let to_yojson t = `Assoc (String.Map.to_alist t)
 
@@ -328,7 +328,7 @@ type 'a log_function =
      t
   -> module_:string
   -> location:string
-  -> ?metadata:(string, Yojson.Safe.t) List.Assoc.t
+  -> ?metadata:(string, Yojson.Safe.json) List.Assoc.t
   -> ('a, unit, string, unit) format4
   -> 'a
 

@@ -322,7 +322,7 @@ struct
         let%bind proof =
           exists Verifier.Proof.typ
             ~compute:
-              As_prover.
+              As_prover.(
                 map get_state
                   ~f:
                     (Fn.compose Verifier.proof_of_backend_proof

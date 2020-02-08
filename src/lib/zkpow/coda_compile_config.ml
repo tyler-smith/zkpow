@@ -1,5 +1,5 @@
 [%%import
-"../../src/config.mlh"]
+"../../config.mlh"]
 
 [%%inject
 "proof_level", proof_level]

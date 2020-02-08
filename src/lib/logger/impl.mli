@@ -20,9 +20,9 @@ end
 module Time : sig
   include module type of Time
 
-  val to_yojson : t -> Yojson.Safe.t
+  val to_yojson : t -> Yojson.Safe.json
 
-  val of_yojson : Yojson.Safe.t -> (t, string) Result.t
+  val of_yojson : Yojson.Safe.json -> (t, string) Result.t
 end
 
 module Source : sig
@@ -35,7 +35,7 @@ end
 module Metadata : sig
   module Stable : sig
     module V1 : sig
-      type t = Yojson.Safe.t String.Map.t
+      type t = Yojson.Safe.json String.Map.t
       [@@deriving yojson, bin_io, version]
     end
 
@@ -107,16 +107,16 @@ type 'a log_function =
      t
   -> module_:string
   -> location:string
-  -> ?metadata:(string, Yojson.Safe.t) List.Assoc.t
+  -> ?metadata:(string, Yojson.Safe.json) List.Assoc.t
   -> ('a, unit, string, unit) format4
   -> 'a
 
 val create :
-  ?metadata:(string, Yojson.Safe.t) List.Assoc.t -> ?id:string -> unit -> t
+  ?metadata:(string, Yojson.Safe.json) List.Assoc.t -> ?id:string -> unit -> t
 
 val null : unit -> t
 
-val extend : t -> (string, Yojson.Safe.t) List.Assoc.t -> t
+val extend : t -> (string, Yojson.Safe.json) List.Assoc.t -> t
 
 val change_id : t -> id:string -> t
 

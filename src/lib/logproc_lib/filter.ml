@@ -282,7 +282,7 @@ module Interpreter = struct
   let access_int json i =
     match json with `List ls -> List.nth ls i | _ -> None
 
-  let rec interpret_value_exp (json : Yojson.Safe.t) = function
+  let rec interpret_value_exp (json : Yojson.Safe.json) = function
     | Value_lit v ->
         Some (json_value v)
     | Value_list ls ->

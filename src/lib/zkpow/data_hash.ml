@@ -1,7 +1,7 @@
 (* data_hash.ml *)
 
 [%%import
-"/src/config.mlh"]
+"../../config.mlh"]
 
 open Core_kernel
 open Bitstring_lib
