@@ -13,17 +13,12 @@ export TERM=${TERM:-xterm}
 # ocaml environment
 eval $(opam config env)
 
-# check for cache'd opam
 SWITCH_BASE='4.07.1'
-SWITCH='zkpow-4.07.1'
-
-
-# opam switch remove $SWITCH || true # temp hack for testing, remove!!!
-
+SWITCH='zkpow-4.07.1-2'
 SWITCH_LIST=$(opam switch list -s)
 
 
-# Check to see if we have explicit switch version
+# Check for cached switch
 SWITCH_FOUND=false
 for val in $SWITCH_LIST; do
   if [ $val == $SWITCH ]; then
@@ -35,14 +30,14 @@ if [ "$SWITCH_FOUND" = true ]; then
   opam switch set $SWITCH
   eval $(opam config env)
 else
-  # Build opam from scratch
+  # Build switch from scratch
   opam init
   opam update
   opam switch create $SWITCH $SWITCH_BASE || true
   opam switch $SWITCH
 fi
 
-# workaround a permissions problem in rpc_parallel .git
+# Workaround a permissions problem in rpc_parallel .git
 chmod -R u+rw ~/.opam
 
 opam install -y dune jbuilder
