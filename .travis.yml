@@ -11,5 +11,6 @@ env:
 script:
   - git submodule update --init --recursive
   - bash -ex .travis-ocaml.sh
+  - opam install dune
   - make install_deps
   - make run
