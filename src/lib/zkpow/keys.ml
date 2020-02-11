@@ -54,6 +54,7 @@ module type S = sig
   end
 end
 
+(* let pk = Snarky_keys.proving *)
 
 (* let bc_pk = Tick.generate_keypair ~exposing(tick) *)
 

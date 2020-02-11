@@ -111,7 +111,8 @@ struct
     module Verifier = Tick.Verifier
 
     let wrap_input_size = Tock.Data_spec.size [Wrap_input.typ]
-
+  
+  
     (* let wrap_vk_triple_length =
       Verifier.Verification_key.summary_length_in_bits
         ~twist_extension_degree:3 ~input_size:wrap_input_size
@@ -160,7 +161,7 @@ struct
 
     let exists' typ ~f = exists typ ~compute:As_prover.(map get_state ~f)
 
-    let%snarkydef main2 (next_state_hash : Digest.Tick.Packed.var) =
+    let%snarkydef main (next_state_hash : Digest.Tick.Packed.var) =
       (* Calculate next state and compare with given next_state_hash *)
       let%bind prev_state = exists' Field.typ ~f:Prover_state.prev_state in
       let%bind prev_state_hash = exists' Field.typ ~f:Prover_state.prev_hash in
@@ -190,109 +191,19 @@ struct
       with_label __LOC__
         (Boolean.Assert.any [is_base_case; prev_state_valid])
 
-    let create_keys () = generate_keypair main2 ~exposing:(step_input ())
 
-    (* let%snarkydef main (logger : Logger.t) (top_hash : Digest.Tick.Packed.var)
-        =
-      let%bind prev_state = exists' State.typ ~f:Prover_state.prev_state
-      and update = exists' Update.typ ~f:Prover_state.update in
-      let%bind prev_state_hash, prev_state_body_hash =
-        State.Checked.hash prev_state
-      in
-      let%bind next_state_hash, next_state, `Success success =
-        with_label __LOC__
-          (State.Checked.update ~logger
-             (prev_state_hash, prev_state_body_hash, prev_state)
-             update)
-      in
-      let%bind wrap_vk =
-        exists' (Verifier.Verification_key.typ ~input_size:wrap_input_size)
-          ~f:(fun {Prover_state.wrap_vk; _} ->
-            Verifier.vk_of_backend_vk wrap_vk )
-      in
-      let%bind wrap_vk_section = hash_vk wrap_vk in
-      let%bind next_top_hash =
-        with_label __LOC__
-          ((* We could be reusing the intermediate state of the hash on sh here instead of
-               hashing anew *)
-           compute_top_hash wrap_vk_section next_state_hash)
-      in
-      let%bind () =
-        as_prover
-          As_prover.(
-            Let_syntax.(
-              let%bind prover_state = get_state in
-              match Prover_state.expected_next_state prover_state with
-              | Some expected_next_state ->
-                  let%bind in_snark_next_state = read State.typ next_state in
-                  let%bind next_top_hash = read Field.typ next_top_hash in
-                  let%bind top_hash = read Field.typ top_hash in
-                  let updated = State.sexp_of_value in_snark_next_state in
-                  let original = State.sexp_of_value expected_next_state in
-                  ( if not (Field.equal next_top_hash top_hash) then
-                    let diff =
-                      Sexp_diff_kernel.Algo.diff ~original ~updated ()
-                    in
-                    Logger.fatal logger
-                      "Out-of-SNARK and in-SNARK calculations of the next top \
-                       hash differ"
-                      ~metadata:
-                        [ ( "state_sexp_diff"
-                          , `String
-                              (Sexp_diff_kernel.Display.display_as_plain_string
-                                 diff) ) ]
-                      ~location:__LOC__ ~module_:__MODULE__ ) ;
-                  return ()
-              | None ->
-                  Logger.error logger
-                    "From the current prover state, got None for the expected \
-                     next state, which should be true only when calculating \
-                     precomputed values"
-                    ~location:__LOC__ ~module_:__MODULE__ ;
-                  return ()))
-      in
-      let%bind () =
-        with_label __LOC__ Field.Checked.Assert.(equal next_top_hash top_hash)
-      in
-      let%bind prev_state_valid =
-        prev_state_valid wrap_vk_section wrap_vk prev_state_hash
-      in
-      let%bind inductive_case_passed =
-        with_label __LOC__ Boolean.(prev_state_valid && success)
-      in
-      let%bind is_base_case = State.Checked.is_base_case next_state in
-      let%bind () =
-        as_prover
-          As_prover.(
-            Let_syntax.(
-              let%map prev_valid = read Boolean.typ prev_state_valid
-              and success = read Boolean.typ success
-              and is_base_case = read Boolean.typ is_base_case in
-              let result = (prev_valid && success) || is_base_case in
-              Logger.trace logger
-                "transition system debug state: (previous valid=$prev_valid \
-                 ∧ update success=$success) ∨ base case=$is_base_case = \
-                 $result"
-                ~location:__LOC__ ~module_:__MODULE__
-                ~metadata:
-                  [ ("prev_valid", `Bool prev_valid)
-                  ; ("success", `Bool success)
-                  ; ("is_base_case", `Bool is_base_case)
-                  ; ("result", `Bool result) ]))
-      in
-      with_label __LOC__
-        (Boolean.Assert.any [is_base_case; inductive_case_passed]) *)
+    let create_keys () = generate_keypair main ~exposing:(step_input ())
   end
 
-  (* module Step (Tick_keypair : Tick_keypair_intf) = struct
+  module Step (Tick_keypair : Tick_keypair_intf) = struct
     include Step_base
     include Tick_keypair
-  end *)
+  end
 
-  module Step  = struct
+  (* module Step  = struct
     include Step_base
     (* include Tick_keypair *)
-  end
+  end *)
 
   module type Step_vk_intf = sig
     val verification_key : Tick.Verification_key.t
@@ -333,12 +244,11 @@ struct
       with_label __LOC__ (Boolean.Assert.is_true result)
  
     let create_keys () = generate_keypair main ~exposing:input
-     end
+  end
 
-  (* module Wrap (Step_vk : Step_vk_intf) (Tock_keypair : Tock_keypair_intf) = *)
-  module Wrap (Step_vk : Step_vk_intf) =
+  module Wrap (Step_vk : Step_vk_intf) (Tock_keypair : Tock_keypair_intf) =
   struct
     include Wrap_base (Step_vk)
-    (* include Tock_keypair *)
+    include Tock_keypair
   end
 end

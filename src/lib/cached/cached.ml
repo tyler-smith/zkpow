@@ -257,9 +257,9 @@ let run
       match%bind
         let open Deferred.Result.Let_syntax in
         let%bind () =
-          Error.of_string "asdf"
+          Deferred.Result.fail (Error.of_string "Not implemented")
           (* Cache_dir.load_from_s3
-            (full_paths s3_bucket_prefix)
+            (full_paths s3_bucket_prefix)x
             (full_paths s3_install_path)
             ~logger:(Logger.create ()) *)
         in
