@@ -41,7 +41,7 @@ module Make () = struct
   type t = T1.t [@@deriving hash, sexp, compare]
 
   [%%define_locally
-  T1.(to_raw_string, digest_string, to_hex)]
+  T1.(to_raw_string, digest_string, to_hex, digest_bytes)]
 
   (* do not use Binable.Of_stringable *)
   include Hashable.Make (T1)

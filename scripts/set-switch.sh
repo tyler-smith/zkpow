@@ -14,7 +14,7 @@ export TERM=${TERM:-xterm}
 eval $(opam config env)
 
 SWITCH_BASE='4.07.1'
-SWITCH='zkpow-4.07.1-2'
+SWITCH="zkpow-$SWITCH_BASE"
 SWITCH_LIST=$(opam switch list -s)
 
 # Check for cached switch

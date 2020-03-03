@@ -4,4 +4,4 @@
  (names main)
  (modes native)
  (preprocess (pps ppx_jane))
- (libraries core snark_bits snarky zkpow))
+ (libraries core snark_bits snarky zkpow sha256))

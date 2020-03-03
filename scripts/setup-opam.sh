@@ -7,7 +7,7 @@ export OPAMKEEPBUILDDIR='true'
 export OPAMREUSEBUILDDIR='true'
 export OPAMYES=1
 
-set-switch.sh
+sh ./scripts/set-switch.sh
 
 # Workaround a permissions problem in rpc_parallel .git
 chmod -R u+rw ~/.opam

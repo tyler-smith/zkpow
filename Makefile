@@ -2,6 +2,9 @@ CLI_BINARY ?= "src/app/zkpow/main.exe"
 
 DOCKER_HUB_PROFILE ?= tylersmith
 
+env: ## Configure env for our switch
+	@sh ./scripts/set-switch.sh
+
 build: ## Build all components
 	@dune build -j8 $(CLI_BINARY)
 

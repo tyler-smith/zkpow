@@ -1,0 +1,7 @@
+(executable
+ (name gen_keys)
+ (libraries ppxlib cache_dir remove_snark_keys_trigger cached async core zkpow)
+ (preprocessor_deps ../../../config.mlh)
+ (preprocess
+  (pps ppx_optcomp ppx_let ppxlib.metaquot ppxlib.runner))
+ (modes native))

@@ -131,6 +131,44 @@ module Keys0 = struct
     ) *)
 end
 
+(* module Mnt4 = Make (struct
+  open Snarky_universe
+
+  type field = Snarky.Backends.Mnt4.Field.t
+
+  let curve = Curve.Bn128
+
+  let system = Groth16
+end) *)
+
+module System = struct
+  (* module U = Blockchain_snark_state.Make_update (T) *)
+  module Update = Protocol_state.Update
+
+  module State = struct
+    (* open Protocol_state *)
+    include Protocol_state
+
+    (* include (
+      Blockchain_snark_state :
+        module type of Blockchain_snark_state
+        with module Checked := Blockchain_snark_state.Checked )
+
+    (* include (U : module type of U with module Checked := U.Checked) *)
+
+    module Hash = struct
+      include State_hash
+
+      let var_to_field = var_to_hash_packed
+    end
+
+    module Checked = struct
+      include Blockchain_snark_state.Checked
+      (* include U.Checked *)
+    end *)
+  end
+end
+
 module Base = struct
   open Fold_lib
 
@@ -181,7 +219,7 @@ module Base = struct
     end
 
     module Tock = Bits.Snarkable.Field (Tock)
-  end)
+  end) (System)
 
   module Keys = struct
     open Snark
@@ -209,7 +247,7 @@ module Base = struct
           (Fn.compose Md5.to_hex Tick.R1CS_constraint_system.digest)
         ~create_env:Tick.Keypair.generate
         ~input:
-          (Tick.constraint_system ~exposing:(Step_base.input ()) Step_base.main)
+          (Tick.constraint_system ~exposing:(Transition_system.step_input ()) (Step_base.main (Logger.null ())))
   
     let cached () =
       let open Cached.Deferred_with_track_generated.Let_syntax in
@@ -259,14 +297,21 @@ module Base = struct
 
   module State = Snark.Step_base.Prover_state
 
-
   let step_kp = Snark.Step_base.create_keys ()
   let step_pk = Tick.Keypair.pk step_kp
   let step_vk = Tick.Keypair.vk step_kp
 
-  module Step = Snark.Step(struct
-    let keys = step_kp
-  end)
+  module Step = struct
+    include Snark.Step(struct
+      let keys = step_kp
+    end)
+    module U = struct
+      let open Snarky_universe in
+      create Bn128 Groth16
+    end
+
+    include U 
+  end
 
   module Step_vk = struct
     let verification_key = Tick.Keypair.vk step_kp
@@ -283,5 +328,52 @@ module Base = struct
   end)
 
   module WrappedState = Wrap_base.Prover_state
+
+  let instance_hash wrap_vk =
+    let init =
+      Random_oracle.update
+        ~state:Hash_prefix_states.transition_system_snark
+        Snark_params.Tick.Verifier.(
+          let vk = vk_of_backend_vk wrap_vk in
+          let g1 = Tick.Inner_curve.to_affine_exn in
+          let g2 = Tick.Pairing.G2.Unchecked.to_affine_exn in
+          Verification_key.to_field_elements
+            { vk with
+              query_base= g1 vk.query_base
+            ; query= List.map ~f:g1 vk.query
+            ; delta= g2 vk.delta })
+    in
+    stage (fun state ->
+        Random_oracle.hash ~init [|((Protocol_state.hash state :> State_hash.t) :> Tick.Field.t)|]
+    )
+
+  let state0 = 
+    let zero_hash = (Protocol_state.Hash.of_hash Field.zero) in
+    { State.wrap_vk= wrap_vk
+    ; prev_proof = Tock.Proof.dummy
+    ; prev_state = Protocol_state.create_value 
+      ~previous_state_hash:zero_hash
+      ~height:Field.zero
+      ~weight:Field.zero
+    ; expected_next_state = Protocol_state.create_value
+      ~previous_state_hash:zero_hash
+      ~height:Field.zero
+      ~weight:Field.zero
+      }
+
+  let next_state (state : State.t) proof = 
+    let current_state = state.expected_next_state in
+    let current_state_hash = Protocol_state.hash current_state in
+    let current_height = Protocol_state.height current_state in
+    let expected_next_state = Protocol_state.create_value
+      ~previous_state_hash:current_state_hash
+      ~height:(Field.add Field.one current_height)
+      ~weight:(Field.add Field.one current_height)
+    in
+    { State.wrap_vk= wrap_vk
+    ; prev_proof = proof
+    ; prev_state = current_state
+    ; expected_next_state = expected_next_state
+    }
 end
 

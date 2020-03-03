@@ -1,11 +1,18 @@
 open Core_kernel
 open Fold_lib
+open Bitstring_lib
 
 (* Someday: Make more efficient by giving Field.unpack a length argument in
-   camlsnark *)
+camlsnark *)
 let unpack_field unpack ~bit_length x = List.take (unpack x) bit_length
 
 let bits_per_char = 8
+
+let pad (type a) ~length ~default (bs : a Bitstring.Lsb_first.t) =
+  let bs = (bs :> a list) in
+  let padding = length - List.length bs in
+  assert (padding >= 0) ;
+  bs @ List.init padding ~f:(fun _ -> default)
 
 module Vector = struct
   module type Basic = sig
@@ -14,6 +21,8 @@ module Vector = struct
     val length : int
 
     val get : t -> int -> bool
+
+    val set : t -> int -> bool -> t
   end
 
   module type S = sig
@@ -50,16 +59,16 @@ module Vector = struct
     let set t i b = if b then t lor (one lsl i) else t land lognot (one lsl i)
   end
 
-  module Make (V : Basic) : Bits_intf.S with type t = V.t = struct
+  module Make (V : S) : Bits_intf.Convertible_bits with type t = V.t = struct
     type t = V.t
 
     let fold t =
       { Fold.fold=
           (fun ~init ~f ->
-             let rec go acc i =
-               if i = V.length then acc else go (f acc (V.get t i)) (i + 1)
-             in
-             go init 0 ) }
+            let rec go acc i =
+              if i = V.length then acc else go (f acc (V.get t i)) (i + 1)
+            in
+            go init 0 ) }
 
     let iter t ~f =
       for i = 0 to V.length - 1 do
@@ -67,33 +76,29 @@ module Vector = struct
       done
 
     let to_bits t = List.init V.length ~f:(V.get t)
-  end
 
-  module Bigstring (M : sig
-      val bit_length : int
-    end) : Basic with type t = Bigstring.t = struct
-    type t = Bigstring.t
-
-    let char_nth_bit c n = (Char.to_int c lsl n) land 1 = 1
-
-    let get t n =
-      char_nth_bit (Bigstring.get t (n / bits_per_char)) (n mod bits_per_char)
-
-    let length = M.bit_length
+    let of_bits bools =
+      List.foldi bools ~init:V.empty ~f:(fun i t bool -> V.set t i bool)
   end
 end
 
-module UInt64 : Bits_intf.S with type t := Unsigned.UInt64.t =
+module UInt64 : Bits_intf.Convertible_bits with type t := Unsigned.UInt64.t =
   Vector.Make (Vector.UInt64)
 
-module UInt32 : Bits_intf.S with type t := Unsigned.UInt32.t =
+module UInt32 : Bits_intf.Convertible_bits with type t := Unsigned.UInt32.t =
   Vector.Make (Vector.UInt32)
+
+module type Big_int_intf = sig
+  include Snarky.Bigint_intf.S
+
+  val to_field : t -> field
+end
 
 module Make_field0
     (Field : Snarky.Field_intf.S)
-    (Bigint : Snarky.Bigint_intf.S with type field := Field.t) (M : sig
-                                                                  val bit_length : int
-                                                                end) : Bits_intf.S with type t = Field.t = struct
+    (Bigint : Big_int_intf with type field := Field.t) (M : sig
+        val bit_length : int
+    end) : Bits_intf.S with type t = Field.t = struct
   open M
 
   type t = Field.t
@@ -101,12 +106,12 @@ module Make_field0
   let fold t =
     { Fold.fold=
         (fun ~init ~f ->
-           let n = Bigint.of_field t in
-           let rec go acc i =
-             if i = bit_length then acc
-             else go (f acc (Bigint.test_bit n i)) (i + 1)
-           in
-           go init 0 ) }
+          let n = Bigint.of_field t in
+          let rec go acc i =
+            if i = bit_length then acc
+            else go (f acc (Bigint.test_bit n i)) (i + 1)
+          in
+          go init 0 ) }
 
   let iter t ~f =
     let n = Bigint.of_field t in
@@ -124,7 +129,7 @@ end
 
 module Make_field
     (Field : Snarky.Field_intf.S)
-    (Bigint : Snarky.Bigint_intf.S with type field := Field.t) :
+    (Bigint : Big_int_intf with type field := Field.t) :
   Bits_intf.S with type t = Field.t =
   Make_field0 (Field) (Bigint)
     (struct
@@ -133,9 +138,9 @@ module Make_field
 
 module Small
     (Field : Snarky.Field_intf.S)
-    (Bigint : Snarky.Bigint_intf.S with type field := Field.t) (M : sig
-                                                                  val bit_length : int
-                                                                end) : Bits_intf.S with type t = Field.t = struct
+    (Bigint : Big_int_intf with type field := Field.t) (M : sig
+        val bit_length : int
+    end) : Bits_intf.S with type t = Field.t = struct
   let () = assert (M.bit_length < Field.size_in_bits)
 
   include Make_field0 (Field) (Bigint) (M)
@@ -144,16 +149,16 @@ end
 module Snarkable = struct
   module Small_bit_vector
       (Impl : Snarky.Snark_intf.S) (V : sig
-                                      type t
+          type t
 
-                                      val empty : t
+          val empty : t
 
-                                      val length : int
+          val length : int
 
-                                      val get : t -> int -> bool
+          val get : t -> int -> bool
 
-                                      val set : t -> int -> bool -> t
-                                    end) :
+          val set : t -> int -> bool -> t
+      end) :
     Bits_intf.Snarkable.Small
     with type ('a, 'b) typ := ('a, 'b) Impl.Typ.t
      and type ('a, 'b) checked := ('a, 'b) Impl.Checked.t
@@ -191,7 +196,6 @@ module Snarkable = struct
           init ~f:(fun i -> Bigint.test_bit n i)
         in
         let store t =
-          let open Store.Let_syntax in
           let rec go two_to_the_i i acc =
             if i = V.length then acc
             else
@@ -228,7 +232,9 @@ module Snarkable = struct
           (Typ.list ~length:V.length Boolean.typ)
           ~there:(v_to_list V.length) ~back:v_of_list
 
-      let var_to_bits = Bitstring_lib.Bitstring.Lsb_first.of_list
+      let var_to_bits = Bitstring.Lsb_first.of_list
+
+      let var_of_bits = pad ~length:V.length ~default:Boolean.false_
 
       let var_to_triples (bs : var) =
         Bitstring_lib.Bitstring.pad_to_triple_list ~default:Boolean.false_ bs
@@ -240,6 +246,8 @@ module Snarkable = struct
     let unpack_var x = Impl.Field.Checked.unpack x ~length:bit_length
 
     let var_of_field = unpack_var
+
+    let var_of_field_unsafe = Fn.id
 
     let unpack_value (x : Packed.value) : Unpacked.value = x
 
@@ -270,9 +278,10 @@ module Snarkable = struct
         List.map2 then_ else_ ~f:(fun then_ else_ ->
             Boolean.if_ cond ~then_ ~else_ )
       with
-      | Ok result -> Checked.List.all result
+      | Ok result ->
+          Checked.List.all result
       | Unequal_lengths ->
-        failwith "Bits.if_: unpacked bit lengths were unequal"
+          failwith "Bits.if_: unpacked bit lengths were unequal"
   end
 
   module UInt64 (Impl : Snarky.Snark_intf.S) =
@@ -282,8 +291,8 @@ module Snarkable = struct
 
   module Field_backed
       (Impl : Snarky.Snark_intf.S) (M : sig
-                                      val bit_length : int
-                                    end) =
+          val bit_length : int
+      end) =
   struct
     open Impl
     include M
@@ -310,6 +319,8 @@ module Snarkable = struct
           ~back:Field.project
 
       let var_to_bits = Bitstring_lib.Bitstring.Lsb_first.of_list
+
+      let var_of_bits = pad ~length:bit_length ~default:Boolean.false_
 
       let var_to_triples (bs : var) =
         Bitstring_lib.Bitstring.pad_to_triple_list ~default:Boolean.false_ bs
@@ -346,8 +357,8 @@ module Snarkable = struct
 
   module Small
       (Impl : Snarky.Snark_intf.S) (M : sig
-                                      val bit_length : int
-                                    end) :
+          val bit_length : int
+      end) :
     Bits_intf.Snarkable.Faithful
     with type ('a, 'b) typ := ('a, 'b) Impl.Typ.t
      and type ('a, 'b) checked := ('a, 'b) Impl.Checked.t
@@ -372,10 +383,8 @@ end
 
 module Make_unpacked
     (Impl : Snarky.Snark_intf.S) (M : sig
-                                    val bit_length : int
-
-                                    val element_length : int
-                                  end) =
+        val bit_length : int
+    end) =
 struct
   open Impl
 

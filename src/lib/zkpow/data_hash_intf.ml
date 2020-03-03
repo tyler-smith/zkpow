@@ -14,7 +14,7 @@ module type Basic = sig
 
   val to_bytes : t -> string
 
-  [%%if defined consensus_mechanism]
+  (* [%%if defined consensus_mechanism] *)
 
   type var
 
@@ -34,7 +34,7 @@ module type Basic = sig
 
   val var_of_t : t -> var
 
-  [%%endif]
+  (* [%%endif] *)
 
   include Bits_intf.S with type t := t
 
@@ -60,13 +60,13 @@ module type Full_size = sig
 
   include Hashable with type t := t
 
-  [%%if defined consensus_mechanism]
+  (* [%%if defined consensus_mechanism] *)
 
   val if_ : Boolean.var -> then_:var -> else_:var -> (var, _) Checked.t
 
   val var_of_hash_packed : Pedersen.Checked.Digest.var -> var
 
-  [%%endif]
+  (* [%%endif] *)
 
   val of_hash : Pedersen.Digest.t -> t
 end

@@ -14,6 +14,9 @@ open Snark_params.Tick
 
 [%%endif]
 
+
+open Snark_params.Tick
+
 module type Small = Data_hash_intf.Small
 
 module type Full_size = Data_hash_intf.Full_size
@@ -45,8 +48,8 @@ struct
 
   let to_input t = Random_oracle.Input.field t
 
-  [%%if
-  defined consensus_mechanism]
+  (* [%%if
+  defined consensus_mechanism] *)
 
   (* SNARK-dependent code *)
   type var =
@@ -128,7 +131,7 @@ struct
     {store; read; alloc; check}
 
   (* end SNARK-dependent *)
-  [%%endif]
+  (* [%%endif] *)
 end
 
 module Make_full_size () = struct

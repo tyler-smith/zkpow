@@ -1,0 +1,13 @@
+(library
+ (name snark_keys)
+ (public_name snark_keys)
+ (libraries async dummy_values core)
+ (preprocess
+  (pps ppx_coda ppx_jane ppxlib.runner ppx_deriving_yojson)))
+
+(rule
+ (targets snark_keys.ml)
+ (deps
+  (:< gen_keys/gen_keys.exe))
+ (action
+  (run %{<} %{targets})))
