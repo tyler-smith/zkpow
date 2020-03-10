@@ -14,9 +14,6 @@ open Snark_params.Tick
 
 [%%endif]
 
-
-open Snark_params.Tick
-
 module type Small = Data_hash_intf.Small
 
 module type Full_size = Data_hash_intf.Full_size

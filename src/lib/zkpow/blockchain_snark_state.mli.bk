@@ -1,9 +1,0 @@
-(* open Coda_base *)
-(* open Coda_state *)
-open Snark_params.Tick
-
-module Checked : sig
-  val hash : Protocol_state.var -> (Protocol_state.Hash.var, _) Checked.t
-
-  val is_base_hash : State_hash.var -> (Boolean.var, _) Checked.t
-end

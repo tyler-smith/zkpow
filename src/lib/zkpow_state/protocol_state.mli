@@ -1,4 +1,5 @@
 open Snark_params.Tick
+open Zkpow_base
 
 module Update : Snarkable.S
 
@@ -26,10 +27,10 @@ module Hash : sig
 
   val typ : (var, t) Typ.t
 
-  (* val var_to_field : var -> Field.Var.t *)
+  val var_to_field : var -> Field.Var.t
 
   val of_hash : Pedersen.Digest.t -> t
-
+  
   val var_of_t : t -> var
 end
 
@@ -51,7 +52,6 @@ module Checked : sig
     -> Hash.var * var
     -> Update.var
     -> (Hash.var * var * [`Success of Boolean.var], _) Checked.t
-
 end
 
 val create : previous_state_hash:'a -> height:'b -> weight:'b -> ('a, 'b) Poly.t
@@ -68,11 +68,12 @@ val create_var :
   -> weight:Field.Var.t
   -> var
 
-val previous_state_hash :
-('a, _) Poly.t -> 'a
+val previous_state_hash : ('a, _) Poly.t -> 'a
 
-val height :
-(_, 'a) Poly.t -> 'a
+val height : (_, 'a) Poly.t -> 'a
 
-val weight :
-(_, 'a) Poly.t -> 'a
+val weight : (_, 'a) Poly.t -> 'a
+
+val hash_checked : var -> (State_hash.var, _) Checked.t
+
+val hash : Value.t -> State_hash.t

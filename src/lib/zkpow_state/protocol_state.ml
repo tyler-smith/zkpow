@@ -1,13 +1,6 @@
 open Core_kernel
-(* open Curve_choice *)
-open Zkpow_state
-
 open Snark_params.Tick
-
-(* let zero = Field.of_int 0
-let one = Field.of_int 1
-let two = Field.of_int 2
-let negative_one = Field.negate one *)
+open Zkpow_base
 
 module Update = Snark_transition
 
@@ -27,12 +20,6 @@ let previous_state_hash {Poly.previous_state_hash; _} =
 let height {Poly.height; _} = height
 
 let weight {Poly.weight; _} = weight
-
-(* [%%define_locally
-Poly.
-  ( previous_state_hash
-  , height
-  , weight )] *)
 
 module Value = struct
   type t =

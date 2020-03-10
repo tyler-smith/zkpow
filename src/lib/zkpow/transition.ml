@@ -1,5 +1,7 @@
 (* open Coda_base *)
 open Core_kernel
+open Zkpow_base
+open Zkpow_state
 open Snark_params
 open Snark_bits
 open Tick
@@ -130,16 +132,6 @@ module Keys0 = struct
     , {Checksum.proving= proving_checksum; verification= verification_checksum}
     ) *)
 end
-
-(* module Mnt4 = Make (struct
-  open Snarky_universe
-
-  type field = Snarky.Backends.Mnt4.Field.t
-
-  let curve = Curve.Bn128
-
-  let system = Groth16
-end) *)
 
 module System = struct
   (* module U = Blockchain_snark_state.Make_update (T) *)

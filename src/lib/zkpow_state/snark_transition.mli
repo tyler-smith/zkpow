@@ -1,5 +1,6 @@
 (* open Core_kernel *)
 open Snark_params.Tick
+open Zkpow_base
 
 module Poly : sig
   type ( 'state_hash
